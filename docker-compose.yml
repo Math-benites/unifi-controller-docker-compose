@@ -1,0 +1,64 @@
+version: '3.5'
+services:
+
+##### UNIFI-CONTROLLER SERVER #####
+
+ unifi-controller:
+   container_name: unifi-server
+   image: jacobalberty/unifi:v8.6.9
+   restart: always
+   volumes:
+     - ./unifi-controller/data/lib:/var/lib/'
+     - ./unifi-controller/data/log:/unifi/log/'
+     - ./unifi-controller/data/run:/var/run/unifi'
+     - ./unifi-controller/data/init:/unifi/init.d
+     - ./unifi-controller/data:/unifi/data
+     - ./unifi-controller:/unifi
+   depends_on:
+      - mongo
+   init: true
+   ports:
+     - '3478:3478/udp'
+     - '10001:10001/udp'
+     - '6789:6789/tcp'
+     - '8080:8080/tcp' 
+     - '8780:8880/tcp'
+     - '8343:8443/tcp'  #portal GUI
+     - '8243:8843/tcp'
+   user: unifi
+   environment:
+      DB_URI: mongodb://mongo/unifi
+      STATDB_URI: mongodb://mongo/unifi_stat
+      DB_NAME: unifi
+   networks:
+      zbx_net_frontend:
+   labels:
+     - 'unifi-controller'
+ mongo:
+    image: mongo:3.6
+    container_name: unifi-mongo
+    restart: always
+    networks:
+      zbx_net_frontend:
+    volumes:
+      - ./unifi-controller/data/db:/data/db
+      - ./unifi-controller/data/configdb:/data/configdb    
+
+
+##### NETWORKING #####
+
+networks:
+  zbx_net_frontend:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"
+    ipam:
+      driver: default
+
+  zbx_net_backend:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"
+    internal: true
+    ipam:
+      driver: default
